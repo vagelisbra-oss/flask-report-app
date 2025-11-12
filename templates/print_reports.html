@@ -4,7 +4,44 @@
 
 {% block content %}
 
+<style>
+    /* ΕΙΔΙΚΟ CSS ΓΙΑ ΕΚΤΥΠΩΣΗ */
+    @media print {
+        /* Απόκρυψη κεφαλίδων/υποσέλιδων, περιθωρίων και φόντου του browser */
+        body {
+            margin-top: 0;
+            padding-top: 0;
+            background-color: white !important;
+        }
+        .container {
+            width: 100% !important;
+            padding: 0 !important;
+        }
+        .report-print-card {
+            /* ΣΗΜΑΝΤΙΚΟ: Αποτρέπει το σπάσιμο της κάρτας αναφοράς σε δύο σελίδες */
+            page-break-inside: avoid; 
+            border: 1px solid #ccc !important; /* Προσθέτουμε περίγραμμα για καλύτερη οριοθέτηση στην εκτύπωση */
+        }
+        /* Κρύβει το navigation bar και άλλα μη απαραίτητα στοιχεία, αν υπάρχουν στο layout.html */
+        .navbar, .no-print, .btn {
+            display: none !important;
+        }
+    }
+    
+    /* Μη εκτυπώσιμα στοιχεία στην οθόνη (π.χ. κουμπί επιστροφής) */
+    .no-print {
+        display: block; /* Εμφανίζεται στην οθόνη */
+    }
+</style>
+
 <div class="container my-5 print-area">
+    <div class="text-center mb-5 no-print">
+         {# Κουμπί επιστροφής/κλεισίματος για το παράθυρο του browser #}
+         <a href="{{ url_for('view_reports') }}" class="btn btn-secondary mb-4">
+            <i class="bi bi-arrow-left"></i> Επιστροφή στις Αναφορές
+         </a>
+    </div>
+    
     <div class="text-center mb-5">
         <h1>Αναφορές Προόδου Μαθητή</h1>
         <h2 class="text-primary">{{ student.name }} ({{ student.section.name }})</h2>
@@ -12,12 +49,13 @@
     </div>
 
     {% for report in reports %}
-        <div class="card mb-4 shadow-sm border-0 report-print-card">
+        <div class="card mb-4 shadow-sm border report-print-card">
             <div class="card-header bg-light border-bottom">
                 <h4>📚 {{ report.course.name }}</h4>
             </div>
             <div class="card-body">
-                <p class="card-text">{{ report.report_text | nl2br }}</p>
+                {# ΔΙΟΡΘΩΣΗ: Αλλάξαμε το | nl2br σε | replace('\n', '<br>') | safe #}
+                <p class="card-text">{{ report.report_text | replace('\n', '<br>') | safe }}</p>
             </div>
             <div class="card-footer small text-muted d-flex justify-content-between">
                 <span>**Καθηγητής:** {{ report.teacher_name }}</span>
@@ -38,7 +76,10 @@
 <script>
     // Ενεργοποίηση του διαλόγου εκτύπωσης μόλις φορτώσει η σελίδα
     window.onload = function() {
-        window.print();
+        // Χρησιμοποιούμε setTimeout για να διασφαλίσουμε ότι το DOM και το CSS έχουν αποδοθεί πλήρως
+        setTimeout(function() {
+             window.print();
+        }, 500); 
     };
 </script>
 {% endblock %}
