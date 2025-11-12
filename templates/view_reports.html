@@ -9,25 +9,29 @@
     <h2 class="border-bottom pb-2 mb-4">Αναφορές Ανά Μήνα</h2>
 
     <div class="d-flex flex-wrap gap-2 mb-4">
-        <label for="filterStudent" class="form-label mb-0 align-self-center">Φίλτρα:</label>
-        <select class="form-select w-auto" id="filterStudent">
-            <option value="">Όλοι οι Μαθητές</option>
-            {% for student in students %}
-                <option value="{{ student.id }}">{{ student.section.name }} - {{ student.name }}</option>
-            {% endfor %}
-        </select>
-        <select class="form-select w-auto" id="filterCourse">
-            <option value="">Όλα τα Μαθήματα</option>
-            {% for course in courses %}
-                <option value="{{ course.id }}">{{ course.name }}</option>
-            {% endfor %}
-        </select>
-        <select class="form-select w-auto" id="filterMonth">
-            <option value="">Όλοι οι Μήνες</option>
-            {% for month in months %}
-                <option value="{{ month }}">{{ month }}</option>
-            {% endfor %}
-        </select>
+    <label for="filterStudent" class="form-label mb-0 align-self-center">Φίλτρα:</label>
+    <select class="form-select w-auto" id="filterStudent">
+        <option value="">Όλοι οι Μαθητές</option>
+        {% for student in students %}
+            <option value="{{ student.id }}">{{ student.section.name }} - {{ student.name }}</option>
+        {% endfor %}
+    </select>
+    <select class="form-select w-auto" id="filterCourse">
+        <option value="">Όλα τα Μαθήματα</option>
+        {% for course in courses %}
+            <option value="{{ course.id }}">{{ course.name }}</option>
+        {% endfor %}
+    </select>
+    <select class="form-select w-auto" id="filterMonth">
+        <option value="">Όλοι οι Μήνες</option>
+        {% for month in months %}
+            <option value="{{ month }}">{{ month }}</option>
+        {% endfor %}
+    </select>
+    
+    <button type="button" id="printReportsBtn" class="btn btn-dark" disabled>
+        🖨️ Εκτύπωση Αναφορών (Μαθητής & Μήνας)
+    </button>
     </div>
 
     {% if reports %}
@@ -201,12 +205,21 @@
 
 {% block scripts %}
 <script>
-    // 1. Λειτουργία Φίλτρων
+    // 1. Λειτουργία Φίλτρων & Ενεργοποίηση Κουμπιού Εκτύπωσης
     function applyFilters() {
         const studentId = $('#filterStudent').val();
         const courseId = $('#filterCourse').val();
         const month = $('#filterMonth').val();
+        const printBtn = $('#printReportsBtn');
 
+        // Ενεργοποίηση/Απενεργοποίηση του κουμπιού εκτύπωσης
+        if (studentId && month) {
+            printBtn.prop('disabled', false).removeClass('btn-dark').addClass('btn-primary');
+        } else {
+            printBtn.prop('disabled', true).removeClass('btn-primary').addClass('btn-dark');
+        }
+
+        // Φιλτράρισμα καρτών
         $('#reports-list .report-item').each(function() {
             const itemStudent = $(this).data('student').toString();
             const itemCourse = $(this).data('course').toString();
@@ -226,6 +239,21 @@
 
     $('#filterStudent, #filterCourse, #filterMonth').on('change', applyFilters);
     
+    // 4. Λειτουργία Εκτύπωσης
+    $('#printReportsBtn').on('click', function() {
+        const studentId = $('#filterStudent').val();
+        const month = $('#filterMonth').val();
+
+        if (studentId && month) {
+            // Δημιουργία URL για τη νέα route εκτύπωσης
+            const url = `{{ url_for('print_reports') }}?student_id=${studentId}&month=${month}`;
+            // Ανοίγει σε νέο παράθυρο για εκτύπωση (χρειάζεται η route /print_reports στο app.py)
+            window.open(url, '_blank'); 
+        } else {
+            alert('Παρακαλώ επιλέξτε Μαθητή και Μήνα για να συνεχίσετε στην εκτύπωση.');
+        }
+    });
+    
     // 2. Λειτουργία Toggle Κειμένου Αναφοράς
     $('.btn-toggle-report').on('click', function() {
         const reportId = $(this).data('report-id');
@@ -242,7 +270,7 @@
         const entityType = listItem.data('type');
         const entityId = listItem.data('id');
         const currentName = $(this).text();
-        const currentSectionId = listItem.data('section-id'); // Μόνο για μαθητή
+        const currentSectionId = listItem.data('section-id');
 
         $('#modal-entity-type').val(entityType);
         $('#modal-entity-id').val(entityId);

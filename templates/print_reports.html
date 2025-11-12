@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+
+{% block title %}Αναφορές Εκτύπωσης - {{ student.name }} ({{ month }}){% endblock %}
+
+{% block content %}
+
+<div class="container my-5 print-area">
+    <div class="text-center mb-5">
+        <h1>Αναφορές Προόδου Μαθητή</h1>
+        <h2 class="text-primary">{{ student.name }} ({{ student.section.name }})</h2>
+        <h3 class="text-muted">Μήνας Αναφοράς: {{ month }}</h3>
+    </div>
+
+    {% for report in reports %}
+        <div class="card mb-4 shadow-sm border-0 report-print-card">
+            <div class="card-header bg-light border-bottom">
+                <h4>📚 {{ report.course.name }}</h4>
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ report.report_text | nl2br }}</p>
+            </div>
+            <div class="card-footer small text-muted d-flex justify-content-between">
+                <span>**Καθηγητής:** {{ report.teacher_name }}</span>
+                <span>**Ημερομηνία Καταχώρησης:** {{ report.created_at.strftime('%d/%m/%Y') }}</span>
+            </div>
+        </div>
+    {% endfor %}
+    
+    <div class="text-center mt-5">
+        <p class="small text-muted">Τέλος Αναφορών για τον Μήνα.</p>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Ενεργοποίηση του διαλόγου εκτύπωσης μόλις φορτώσει η σελίδα
+    window.onload = function() {
+        window.print();
+    };
+</script>
+{% endblock %}

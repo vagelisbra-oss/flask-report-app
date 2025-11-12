@@ -287,6 +287,39 @@ def edit_data():
     
     return redirect(url_for('view_reports'))
 
+# [4.9] Προβολή Αναφορών για Εκτύπωση (Συνολική Προβολή)
+@app.route('/print_reports')
+def print_reports():
+    # Λήψη παραμέτρων από το URL (π.χ. /print_reports?student_id=1&month=2024-11)
+    student_id = request.args.get('student_id')
+    month = request.args.get('month')
+
+    if not student_id or not month:
+        flash('Πρέπει να επιλέξετε Μαθητή και Μήνα για την εκτύπωση.', 'error')
+        return redirect(url_for('view_reports'))
+
+    # Αναζήτηση του μαθητή
+    student = Student.query.get(student_id)
+    if not student:
+        flash('Ο μαθητής δεν βρέθηκε.', 'error')
+        return redirect(url_for('view_reports'))
+    
+    # Αναζήτηση όλων των αναφορών για τον συγκεκριμένο μαθητή και μήνα
+    filtered_reports = Report.query.filter_by(
+        student_id=student_id,
+        report_month=month
+    ).order_by(Report.course_id.asc()).all()
+    
+    if not filtered_reports:
+        flash(f'Δεν βρέθηκαν αναφορές για τον {student.name} τον μήνα {month}.', 'warning')
+        return redirect(url_for('view_reports'))
+
+    return render_template(
+        'print_reports.html', 
+        student=student, 
+        month=month, 
+        reports=filtered_reports
+    )
 
 # --- 5. Application Execution ---
 if __name__ == '__main__':
