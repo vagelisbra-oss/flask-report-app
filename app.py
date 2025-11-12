@@ -116,45 +116,53 @@ def view_reports():
 # [4.2] Προσθήκη ΝΕΑΣ Αναφοράς
 @app.route('/add_report', methods=('GET', 'POST'))
 def add_report():
-    students = Student.query.join(Section).order_by(Section.name, Student.name).all()
-    courses = Course.query.order_by(Course.name).all()
+  students = Student.query.join(Section).order_by(Section.name, Student.name).all()
+  courses = Course.query.order_by(Course.name).all()
+  
+  if request.method == 'POST':
+    teacher_name = request.form['teacher_name']
+    student_id = request.form['student_id']
+    course_id = request.form['course_id']
+    report_text = request.form['report_text']
+    report_month = request.form['report_month'] # YYYY-MM
     
-    if request.method == 'POST':
-        teacher_name = request.form['teacher_name']
-        student_id = request.form['student_id']
-        course_id = request.form['course_id']
-        report_text = request.form['report_text']
-        report_month = request.form['report_month'] # YYYY-MM
-        
-        if not all([teacher_name, student_id, course_id, report_text, report_month]):
-            flash('Όλα τα πεδία είναι υποχρεωτικά για την υποβολή αναφοράς.', 'error')
-            return redirect(url_for('add_report'))
-        
-        # Έλεγχος για διπλότυπη αναφορά (ίδιος μαθητής/μάθημα/μήνας)
-        existing_report = Report.query.filter_by(
-            student_id=student_id, 
-            course_id=course_id, 
-            report_month=report_month
-        ).first()
+    if not all([teacher_name, student_id, course_id, report_text, report_month]):
+      flash('Όλα τα πεδία είναι υποχρεωτικά για την υποβολή αναφοράς.', 'error')
+      # Περνάμε το now και στο POST redirect για να αποφύγουμε σφάλμα σε περίπτωση αποτυχίας
+      return render_template('add_report.html', students=students, courses=courses, now=datetime.utcnow())
+    
+    # Έλεγχος για διπλότυπη αναφορά (ίδιος μαθητής/μάθημα/μήνας)
+    existing_report = Report.query.filter_by(
+      student_id=student_id, 
+      course_id=course_id, 
+      report_month=report_month
+    ).first()
 
-        if existing_report:
-             flash(f'Υπάρχει ήδη αναφορά για τον μαθητή αυτό, το μάθημα και τον μήνα {report_month}. Μπορείτε να την επεξεργαστείτε.', 'warning')
-             return redirect(url_for('view_reports'))
-        
-        new_report = Report(
-            teacher_name=teacher_name, 
-            student_id=student_id, 
-            course_id=course_id, 
-            report_text=report_text,
-            report_month=report_month
-        )
-        
-        db.session.add(new_report)
-        db.session.commit()
-        flash(f'Η Αναφορά για τον μήνα {report_month} καταχωρήθηκε επιτυχώς.', 'success')
-        return redirect(url_for('view_reports')) 
+    if existing_report:
+      flash(f'Υπάρχει ήδη αναφορά για τον μαθητή αυτό, το μάθημα και τον μήνα {report_month}. Μπορείτε να την επεξεργαστείτε.', 'warning')
+      return redirect(url_for('view_reports'))
     
-    return render_template('add_report.html', students=students, courses=courses)
+    new_report = Report(
+      teacher_name=teacher_name, 
+      student_id=student_id, 
+      course_id=course_id, 
+      report_text=report_text,
+      report_month=report_month
+    )
+    
+    # Χειρισμός πιθανού σφάλματος βάσης δεδομένων κατά το commit
+    try:
+      db.session.add(new_report)
+      db.session.commit()
+      flash(f'Η Αναφορά για τον μήνα {report_month} καταχωρήθηκε επιτυχώς.', 'success')
+    except Exception as e:
+      db.session.rollback()
+      flash(f'Αποτυχία καταχώρησης αναφοράς (Σφάλμα Βάσης): {e}', 'error')
+    
+    return redirect(url_for('view_reports')) 
+  
+  # GET request: ΠΕΡΝΑΜΕ ΤΟ now ΓΙΑ ΝΑ ΠΡΟ-ΣΥΜΠΛΗΡΩΘΕΙ Ο ΜΗΝΑΣ ΣΤΗ ΦΟΡΜΑ
+  return render_template('add_report.html', students=students, courses=courses, now=datetime.utcnow())
 
 # [4.3] Επεξεργασία υπάρχουσας Αναφοράς
 @app.route('/edit_report/<int:report_id>', methods=('GET', 'POST'))
