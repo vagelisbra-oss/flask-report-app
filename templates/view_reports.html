@@ -1,21 +1,281 @@
 <!DOCTYPE html>
-<html>
-<head><title>provoles Όλες οι Αναφορές</title></head>
-<body>
-    <h1>provoli Όλες οι Αναφορές</h1>
-    <p><a href="{{ url_for('add_report') }}">Νέα Καταχώριση</a></p>
-    
-    <table border="1">
-        <tr><th>ID</th><th>Αναφέρων</th><th>Κείμενο</th><th>Ημερομηνία</th><th>Ενέργεια</th></tr>
-        {% for report in reports %}
-        <tr>
-            <td>{{ report['id'] }}</td>
-            <td>{{ report['reporter_name'] }}</td>
-            <td>{{ report['report_text'] }}</td>
-            <td>{{ report['created_at'] }}</td>
-            <td><a href="{{ url_for('edit_report', report_id=report['id']) }}">Επεξεργασία</a></td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Σύστημα Αναφορών | Τμήματα & Μαθητές</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+        .input-group { display: flex; align-items: center; }
+        .edit-input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; }
+        .list-container { max-height: 20rem; overflow-y: auto; }
+        .list-container::-webkit-scrollbar { width: 6px; }
+        .list-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        /* Custom Modal Styling */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center;
+            align-items: center; z-index: 1000;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <h1 class="text-4xl font-extrabold text-blue-800 mb-6 border-b-4 border-blue-500 pb-2">
+            Σύστημα Μηνιαίων Αναφορών Επιδόσεων
+        </h1>
+        <p id="user-status" class="text-xs text-gray-500 mb-4">Φόρτωση χρήστη...</p>
+        
+        <!-- Flash Messages Container -->
+        <div id="flash-messages" class="mb-4"></div>
+
+        <!-- MANAGEMENT PANELS (Sections, Students, Courses) -->
+        <div id="management-panels" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 opacity-0">
+            
+            <!-- Section Management (Διαχείριση Τμημάτων) -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">Διαχείριση Τμημάτων (<span id="section-count">0</span>)</h2>
+                
+                <!-- Add Section Form -->
+                <form id="add-section-form" class="input-group mb-4">
+                    <input type="text" id="section_name" placeholder="Προσθήκη Τμήματος (Π.χ. Γ1)" required class="flex-grow edit-input focus:ring-blue-500 focus:border-blue-500 rounded-r-none uppercase">
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-r-lg transition duration-150 text-sm">
+                        + Τμήμα
+                    </button>
+                </form>
+                
+                <!-- Section List -->
+                <div class="list-container">
+                    <ul id="sections-list" class="space-y-2 pr-2">
+                        <!-- Sections will be rendered here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Student Management (Διαχείριση Μαθητών) -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">Διαχείριση Μαθητών (<span id="student-count">0</span>)</h2>
+                
+                <!-- Add Student Form -->
+                <form id="add-student-form" class="flex flex-col space-y-2 mb-4">
+                    <input type="text" id="student_name" placeholder="Ονοματεπώνυμο Μαθητή" required class="edit-input">
+                    <div class="input-group">
+                        <select id="student_section_id" required class="flex-grow edit-input rounded-r-none text-sm">
+                            <option value="" disabled selected>Επιλέξτε Τμήμα</option>
+                        </select>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-r-lg transition duration-150 text-sm">
+                            + Μαθητής
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Student List -->
+                <div class="list-container">
+                    <ul id="students-list" class="space-y-2 pr-2">
+                        <!-- Students will be rendered here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Course Management (Διαχείριση Μαθημάτων) -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">Διαχείριση Μαθημάτων (<span id="course-count">0</span>)</h2>
+                
+                <!-- Add Course Form -->
+                <form id="add-course-form" class="input-group mb-4">
+                    <input type="text" id="course_name" placeholder="Προσθήκη Μαθήματος (Π.χ. Ιστορία)" required class="flex-grow edit-input focus:ring-blue-500 focus:border-blue-500 rounded-r-none">
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-r-lg transition duration-150 text-sm">
+                        + Μάθημα
+                    </button>
+                </form>
+                
+                <!-- Course List -->
+                <div class="list-container">
+                    <ul id="courses-list" class="space-y-2 pr-2">
+                        <!-- Courses will be rendered here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Report Button -->
+        <div class="flex justify-center mb-10">
+            <button id="open-report-modal-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-8 rounded-xl text-lg shadow-xl transition duration-200 transform hover:scale-105">
+                Καταχώρηση Νέας Μηνιαίας Αναφοράς
+            </button>
+        </div>
+
+        <!-- Reports List (Λίστα Αναφορών) -->
+        <h2 class="text-3xl font-bold text-blue-700 mb-6">Όλες οι Αναφορές (<span id="report-count">0</span>)</h2>
+        
+        <div id="reports-list-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <p id="no-reports-message" class="text-center text-gray-500 text-lg mt-10 p-6 bg-yellow-50 rounded-lg hidden col-span-full">
+                Δεν βρέθηκαν αναφορές. Ξεκινήστε προσθέτοντας μια νέα αναφορά.
+            </p>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (Replaces confirm()) -->
+    <div id="confirmation-modal" class="modal-overlay hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Επιβεβαίωση Διαγραφής</h3>
+            <p id="modal-message" class="text-gray-600 mb-6">Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το στοιχείο;</p>
+            <div class="flex justify-end space-x-3">
+                <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+                    Ακύρωση
+                </button>
+                <button id="modal-confirm-btn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">
+                    Διαγραφή
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report/Edit Modal -->
+    <div id="report-modal" class="modal-overlay hidden">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg">
+            <h3 id="report-modal-title" class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2">Καταχώρηση Νέας Αναφοράς</h3>
+            <form id="report-form" class="space-y-4">
+                <input type="hidden" id="report-id" value="">
+                
+                <div>
+                    <label for="report-student-id" class="block text-sm font-medium text-gray-700">Μαθητής/Μαθήτρια</label>
+                    <select id="report-student-id" required class="edit-input w-full mt-1">
+                        <!-- Options filled by JS -->
+                    </select>
+                </div>
+
+                <div>
+                    <label for="report-course-id" class="block text-sm font-medium text-gray-700">Μάθημα</label>
+                    <select id="report-course-id" required class="edit-input w-full mt-1">
+                        <!-- Options filled by JS -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="report-month" class="block text-sm font-medium text-gray-700">Μήνας Αναφοράς</label>
+                        <input type="month" id="report-month" required class="edit-input w-full mt-1">
+                    </div>
+                    <div>
+                        <label for="teacher-name" class="block text-sm font-medium text-gray-700">Όνομα Καθηγητή</label>
+                        <input type="text" id="teacher-name" placeholder="Π.χ. Νίκος Παπάς" required class="edit-input w-full mt-1">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="report-text" class="block text-sm font-medium text-gray-700">Κείμενο Αναφοράς / Παρατηρήσεις</label>
+                    <textarea id="report-text" rows="4" placeholder="Περιγράψτε την επίδοση, τη συμπεριφορά, και τους στόχους." required class="edit-input w-full mt-1"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeReportModal()" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+                        Ακύρωση
+                    </button>
+                    <button type="submit" id="report-submit-btn" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                        Καταχώρηση Αναφοράς
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, setDoc, addDoc, onSnapshot, updateDoc, deleteDoc, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- Global Firebase & State Variables ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Reactive state objects
+        let sections = [];
+        let students = [];
+        let courses = [];
+        let reports = [];
+
+        // --- Utility Functions ---
+        function getCollectionRef(name) {
+            if (!userId) {
+                console.error("Firestore not ready: userId is null.");
+                return null;
+            }
+            return collection(db, `artifacts/${appId}/users/${userId}/${name}`);
+        }
+
+        function flashMessage(message, category = 'info') {
+            const container = document.getElementById('flash-messages');
+            const colorMap = {
+                success: 'bg-green-100 text-green-800 border-green-400',
+                error: 'bg-red-100 text-red-800 border-red-400',
+                warning: 'bg-yellow-100 text-yellow-800 border-yellow-400',
+                info: 'bg-blue-100 text-blue-800 border-blue-400'
+            };
+            const div = document.createElement('div');
+            div.className = `p-3 mb-2 rounded-lg text-sm border ${colorMap[category]}`;
+            div.textContent = message;
+            container.prepend(div);
+            
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        function formatTimestamp(timestamp) {
+            if (timestamp && timestamp.toDate) {
+                const date = timestamp.toDate();
+                return date.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            }
+            return 'Άγνωστη ημερομηνία';
+        }
+
+        // --- Authentication & Initialization ---
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('error'); // Set log level to reduce noise, use 'debug' if troubleshooting
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                    } else {
+                        // Sign in anonymously if no token is available or user logs out
+                        if (!initialAuthToken) {
+                            await signInAnonymously(auth);
+                            userId = auth.currentUser.uid;
+                        }
+                    }
+                    
+                    if (!isAuthReady) {
+                        isAuthReady = true;
+                        document.getElementById('user-status').textContent = `Συνδεδεμένος Χρήστης ID: ${userId}`;
+                        document.getElementById('management-panels').classList.remove('opacity-0');
+                        setupRealtimeListeners();
+                    }
+                });
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                flashMessage(`Σφάλμα σύνδεσης Firebase: ${error.message}`, 'error');
+            }
+        }
+
+        // ---

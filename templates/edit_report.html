@@ -1,17 +1,75 @@
 <!DOCTYPE html>
-<html>
-<head><title>Επεξεργασία Αναφοράς</title></head>
-<body>
-    <h1>Επεξεργασία Αναφοράς ID: {{ report['id'] }}</h1>
-    <form method="POST">
-        <label for="reporter_name">Όνομα/Email:</label><br>
-        <input type="text" name="reporter_name" value="{{ report['reporter_name'] }}" required><br><br>
-
-        <label for="report_text">Κείμενο Αναφοράς:</label><br>
-        <textarea name="report_text" rows="5" required>{{ report['report_text'] }}</textarea><br><br>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Επεξεργασία Αναφοράς | Σχολείο</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        label { font-weight: 600; color: #333; }
+        input[type="text"], input[type="month"], select, textarea { 
+            border: 1px solid #ccc; padding: 10px; border-radius: 8px; width: 100%; 
+            transition: border-color 0.2s; background-color: white; 
+        }
+        input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .disabled-field { background-color: #e5e7eb; cursor: not-allowed; }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl border-t-8 border-yellow-600">
         
-        <button type="submit">Αποθήκευση Αλλαγών</button>
-    </form>
-    <p><a href="{{ url_for('view_reports') }}">Επιστροφή στη λίστα</a></p>
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">Επεξεργασία Αναφοράς</h1>
+        
+        <!-- Summary of the report being edited -->
+        <p class="mb-4 text-sm text-gray-600">
+            Αναφορά για: <span class="font-bold text-blue-600">{{ report.student.name }}</span> - 
+            Μάθημα: <span class="font-bold text-blue-600">{{ report.course.name }}</span> - 
+            Μήνας: <span class="font-bold text-blue-600">{{ report.report_month }}</span>
+        </p>
+
+        <form method="POST" action="{{ url_for('edit_report', report_id=report.id) }}" class="space-y-6">
+            
+            <!-- Month (Disabled: The report month shouldn't change) -->
+            <div>
+                <label for="report_month" class="block mb-2 text-sm">Μήνας Αναφοράς:</label>
+                <input type="month" id="report_month" value="{{ report.report_month }}" class="disabled-field" disabled>
+            </div>
+            
+            <!-- Teacher Name (Επεξεργάσιμο) -->
+            <div>
+                <label for="teacher_name" class="block mb-2 text-sm">Όνομα Καθηγητή:</label>
+                <input type="text" id="teacher_name" name="teacher_name" value="{{ report.teacher_name }}" required>
+            </div>
+            
+            <!-- Student (Disabled) -->
+            <div>
+                <label for="student_display" class="block mb-2 text-sm">Μαθητής (Τμήμα):</label>
+                <input type="text" id="student_display" value="{{ report.student.name }} ({{ report.student.section.name }})" class="disabled-field" disabled>
+            </div>
+            
+            <!-- Course (Disabled) -->
+            <div>
+                <label for="course_display" class="block mb-2 text-sm">Μάθημα:</label>
+                <input type="text" id="course_display" value="{{ report.course.name }}" class="disabled-field" disabled>
+            </div>
+
+            <!-- Report Text (Επεξεργάσιμο) -->
+            <div>
+                <label for="report_text" class="block mb-2 text-sm">Κείμενο Αναφοράς Επίδοσης:</label>
+                <textarea id="report_text" name="report_text" rows="5" required>{{ report.report_text }}</textarea>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="flex justify-between items-center pt-4 border-t">
+                <a href="{{ url_for('view_reports') }}" class="text-gray-600 hover:text-gray-800 text-sm font-medium transition duration-150">
+                    ← Επιστροφή
+                </a>
+                <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-200 transform hover:scale-105">
+                    Αποθήκευση Αλλαγών
+                </button>
+            </div>
+        </form>
+    </div>
 </body>
 </html>
