@@ -6,3 +6,12 @@ git push origin main
 
 
 https://epidoseis.onrender.com/view
+
+
+
+
+https://console.neon.tech/app/projects/young-bread-76838570?database=neondb
+
+https://dashboard.render.com/web/srv-d4a3mhfdiees73crsse0/events
+
+https://github.com/vagelisbra-oss/flask-report-app/commit/23389b2258ee65a8c8e22c5208964f7fe36fa27a#diff-568470d013cd12e4f388206520da39ab9a4e4c3c6b95846cbc281abc1ba3c959L1-R91

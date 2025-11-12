@@ -298,19 +298,20 @@ def print_reports():
         flash('Πρέπει να επιλέξετε Μαθητή και Μήνα για την εκτύπωση.', 'error')
         return redirect(url_for('view_reports'))
 
-    # Αναζήτηση του μαθητή
+    # 1. ΕΛΕΓΧΟΣ ΜΑΘΗΤΗ (ΠΡΩΤΑ)
     student = Student.query.get(student_id)
     if not student:
         flash('Ο μαθητής δεν βρέθηκε.', 'error')
         return redirect(url_for('view_reports'))
     
-    # Αναζήτηση όλων των αναφορών για τον συγκεκριμένο μαθητή και μήνα
+    # 2. Αναζήτηση όλων των αναφορών για τον συγκεκριμένο μαθητή και μήνα
     filtered_reports = Report.query.filter_by(
         student_id=student_id,
         report_month=month
     ).order_by(Report.course_id.asc()).all()
     
     if not filtered_reports:
+        # Τώρα είναι ασφαλές να χρησιμοποιήσουμε το student.name
         flash(f'Δεν βρέθηκαν αναφορές για τον {student.name} τον μήνα {month}.', 'warning')
         return redirect(url_for('view_reports'))
 
