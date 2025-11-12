@@ -1,0 +1,5 @@
+git add .
+
+git commit -m "Περιγραφικό μήνυμα για το τι άλλαξα"
+
+git push origin main
