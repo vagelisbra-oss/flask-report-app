@@ -1,32 +1,46 @@
-import sqlite3
+import os
 from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
 
-# 1. Ρυθμίσεις Εφαρμογής και Βάσης Δεδομένων
+# --- 1. Ρυθμίσεις Εφαρμογής και Βάσης Δεδομένων ---
+
 app = Flask(__name__)
-DATABASE = 'reports.db' # Το όνομα του αρχείου SQLite
 
-# 2. Σύνδεση με τη Βάση Δεδομένων (SQLite)
-def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    # Αυτό επιτρέπει την πρόσβαση στις στήλες με το όνομά τους (π.χ. report['id'])
-    conn.row_factory = sqlite3.Row 
-    return conn
+# Ελέγχει αν υπάρχει η μεταβλητή περιβάλλοντος 'DATABASE_URL' (το URL της Neon).
+# Αν δεν υπάρχει (τοπική δοκιμή), χρησιμοποιεί τοπικό SQLite (reports.db).
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///reports.db')
 
-# 3. Αρχικοποίηση: Δημιουργία του Πίνακα (Table) αν δεν υπάρχει
+# Αν το URL είναι το 'postgres://...' (π.χ. από παλιά config), το διορθώνουμε σε 'postgresql://...'
+# Αυτό είναι απαραίτητο για το SQLAlchemy.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# --- 2. Ορισμός Μοντέλου (Πίνακα) για το SQLAlchemy ---
+
+class Report(db.Model):
+    # __tablename__ = 'reports' # Προαιρετικό, αλλά καλό
+    id = db.Column(db.Integer, primary_key=True)
+    reporter_name = db.Column(db.Text, nullable=False)
+    report_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    def __repr__(self):
+        return f'<Report {self.id}>'
+
+# 3. Αρχικοποίηση: Δημιουργία των Πινάκων (Table) αν δεν υπάρχουν
+# Αυτή η συνάρτηση εκτελείται μία φορά για να δημιουργήσει τη δομή στη Neon
 def init_db():
-    conn = get_db_connection()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            reporter_name TEXT NOT NULL,
-            report_text TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    with app.app_context():
+        # Δημιουργεί όλους τους πίνακες που ορίζονται ως Models (Report)
+        db.create_all()
 
-init_db() # Εκτελείται όταν ξεκινάει η εφαρμογή
+# Καλούμε την αρχικοποίηση:
+init_db()
 
 # ----------------- 4. ΔΙΑΔΡΟΜΕΣ (ROUTES) ΤΗΣ ΕΦΑΡΜΟΓΗΣ -----------------
 
@@ -38,12 +52,11 @@ def add_report():
         name = request.form['reporter_name']
         text = request.form['report_text']
 
-        # Αποθήκευση στη βάση (SQL INSERT)
-        conn = get_db_connection()
-        conn.execute('INSERT INTO reports (reporter_name, report_text) VALUES (?, ?)',
-                     (name, text))
-        conn.commit()
-        conn.close()
+        # Δημιουργία νέου αντικειμένου Report και αποθήκευση
+        new_report = Report(reporter_name=name, report_text=text)
+        db.session.add(new_report)
+        db.session.commit()
+        
         return redirect(url_for('view_reports')) 
 
     # Αν η μέθοδος είναι GET, εμφανίζει τη φόρμα
@@ -53,10 +66,8 @@ def add_report():
 @app.route('/')
 @app.route('/view')
 def view_reports():
-    conn = get_db_connection()
     # Λήψη όλων των αναφορών, με τη νεότερη πρώτη
-    reports = conn.execute('SELECT * FROM reports ORDER BY created_at DESC').fetchall()
-    conn.close()
+    reports = Report.query.order_by(Report.created_at.desc()).all()
     
     # Αποστολή των δεδομένων στο HTML template
     return render_template('view_reports.html', reports=reports)
@@ -64,26 +75,17 @@ def view_reports():
 # [4.3] ΕΠΕΞΕΡΓΑΣΙΑ ΑΝΑΦΟΡΑΣ (Route: /edit/<id>)
 @app.route('/edit/<int:report_id>', methods=('GET', 'POST'))
 def edit_report(report_id):
-    conn = get_db_connection()
     # Βρίσκει την αναφορά
-    report = conn.execute('SELECT * FROM reports WHERE id = ?', (report_id,)).fetchone()
+    report = Report.query.get_or_404(report_id)
     
-    if report is None:
-        conn.close()
-        return "Αναφορά δεν βρέθηκε", 404
-        
     if request.method == 'POST':
         # ΕΝΤΟΛΗ UPDATE: Αλλαγή των δεδομένων στη βάση
-        new_name = request.form['reporter_name']
-        new_text = request.form['report_text']
+        report.reporter_name = request.form['reporter_name']
+        report.report_text = request.form['report_text']
         
-        conn.execute('UPDATE reports SET reporter_name = ?, report_text = ? WHERE id = ?',
-                     (new_name, new_text, report_id))
-        conn.commit()
-        conn.close()
+        db.session.commit()
         return redirect(url_for('view_reports')) # Επιστροφή στη λίστα
         
-    conn.close()
     # Αν η μέθοδος είναι GET, εμφανίζει τη φόρμα με τα υπάρχοντα δεδομένα
     return render_template('edit_report.html', report=report)
 
