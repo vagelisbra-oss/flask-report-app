@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head><title>Όλες οι Αναφορές</title></head>
+<body>
+    <h1>Όλες οι Αναφορές</h1>
+    <p><a href="{{ url_for('add_report') }}">Νέα Καταχώριση</a></p>
+    
+    <table border="1">
+        <tr><th>ID</th><th>Αναφέρων</th><th>Κείμενο</th><th>Ημερομηνία</th><th>Ενέργεια</th></tr>
+        {% for report in reports %}
+        <tr>
+            <td>{{ report['id'] }}</td>
+            <td>{{ report['reporter_name'] }}</td>
+            <td>{{ report['report_text'] }}</td>
+            <td>{{ report['created_at'] }}</td>
+            <td><a href="{{ url_for('edit_report', report_id=report['id']) }}">Επεξεργασία</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

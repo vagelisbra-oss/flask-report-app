@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><title>Επεξεργασία Αναφοράς</title></head>
+<body>
+    <h1>Επεξεργασία Αναφοράς ID: {{ report['id'] }}</h1>
+    <form method="POST">
+        <label for="reporter_name">Όνομα/Email:</label><br>
+        <input type="text" name="reporter_name" value="{{ report['reporter_name'] }}" required><br><br>
+
+        <label for="report_text">Κείμενο Αναφοράς:</label><br>
+        <textarea name="report_text" rows="5" required>{{ report['report_text'] }}</textarea><br><br>
+        
+        <button type="submit">Αποθήκευση Αλλαγών</button>
+    </form>
+    <p><a href="{{ url_for('view_reports') }}">Επιστροφή στη λίστα</a></p>
+</body>
+</html>

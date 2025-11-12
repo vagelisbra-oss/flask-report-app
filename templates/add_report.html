@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><title>Νέα Αναφορά</title></head>
+<body>
+    <h1>Καταχώριση Νέας Αναφοράς</h1>
+    <form method="POST">
+        <label for="reporter_name">Όνομα/Email:</label><br>
+        <input type="text" name="reporter_name" required><br><br>
+
+        <label for="report_text">Κείμενο Αναφοράς:</label><br>
+        <textarea name="report_text" rows="5" required></textarea><br><br>
+        
+        <button type="submit">Υποβολή Αναφοράς</button>
+    </form>
+    <p><a href="{{ url_for('view_reports') }}">Προβολή όλων των αναφορών</a></p>
+</body>
+</html>
