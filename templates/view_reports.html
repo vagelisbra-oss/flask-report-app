@@ -9,38 +9,38 @@
     <h2 class="border-bottom pb-2 mb-4">Αναφορές Ανά Μήνα</h2>
 
     <div class="d-flex flex-wrap gap-2 mb-4">
-    <label for="filterStudent" class="form-label mb-0 align-self-center">Φίλτρα:</label>
-    <select class="form-select w-auto" id="filterStudent">
-        <option value="">Όλοι οι Μαθητές</option>
-        {% for student in students %}
-            <option value="{{ student.id }}">{{ student.section.name }} - {{ student.name }}</option>
-        {% endfor %}
-    </select>
-    <select class="form-select w-auto" id="filterCourse">
-        <option value="">Όλα τα Μαθήματα</option>
-        {% for course in courses %}
-            <option value="{{ course.id }}">{{ course.name }}</option>
-        {% endfor %}
-    </select>
-    <select class="form-select w-auto" id="filterMonth">
-        <option value="">Όλοι οι Μήνες</option>
-        {% for month in months %}
-            <option value="{{ month }}">{{ month }}</option>
-        {% endfor %}
-    </select>
-    
-    <button type="button" id="printReportsBtn" class="btn btn-dark" disabled>
-        🖨️ Εκτύπωση Αναφορών (Μαθητής & Μήνας)
-    </button>
+        <label for="filterStudent" class="form-label mb-0 align-self-center">Φίλτρα:</label>
+        <select class="form-select w-auto" id="filterStudent">
+            <option value="">Όλοι οι Μαθητές</option>
+            {% for student in students %}
+                <option value="{{ student.id }}">{{ student.section.name }} - {{ student.name }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select w-auto" id="filterCourse">
+            <option value="">Όλα τα Μαθήματα</option>
+            {% for course in courses %}
+                <option value="{{ course.id }}">{{ course.name }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select w-auto" id="filterMonth">
+            <option value="">Όλοι οι Μήνες</option>
+            {% for month in months %}
+                <option value="{{ month }}">{{ month }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="button" id="printReportsBtn" class="btn btn-dark" disabled>
+            🖨️ Εκτύπωση Αναφορών (Μαθητής & Μήνας)
+        </button>
     </div>
 
     {% if reports %}
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="reports-list">
             {% for report in reports %}
                 <div class="col report-item" 
-                     data-student="{{ report.student_id }}" 
-                     data-course="{{ report.course_id }}"
-                     data-month="{{ report.report_month }}">
+                      data-student="{{ report.student_id }}" 
+                      data-course="{{ report.course_id }}"
+                      data-month="{{ report.report_month }}">
                     <div class="card report-card h-100 shadow-sm">
                         <div class="card-header bg-light">
                             <span class="badge bg-primary me-2">{{ report.student.section.name }}</span>
@@ -52,8 +52,8 @@
                                 {{ report.report_text }}
                             </p>
                             <div class="full-report-text d-none" id="full-report-{{ report.id }}">
-                                <p class="card-text">{{ report.report_text }}</p>
-                                <p class="small text-muted mb-1"><strong>Καθηγητής:</strong> {{ report.teacher_name }}</p>
+                                <p class="card-text">{{ report.report_text | replace('\n', '<br>') | safe }}</p>
+                                <p class="small text-muted mb-1"><strong>Καθηγητής:</strong> {{ report.teacher.name }}</p>
                                 <p class="small text-muted">Εισαγωγή: {{ report.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
                             </div>
                         </div>
@@ -72,16 +72,15 @@
     {% endif %}
 </div>
 
+---
 
 <div id="management" class="mb-5 pt-4 border-top">
-    <h2 class="border-bottom pb-2 mb-4">🔧 Διαχείριση Μαθητών, Τμημάτων & Μαθημάτων</h2>
+    <h2 class="border-bottom pb-2 mb-4">🔧 Διαχείριση Σχολικών Δεδομένων</h2>
     <div class="row">
         
         <div class="col-lg-4 mb-4">
             <div class="card h-100 border-success">
-                <div class="card-header bg-success text-white">
-                    <h5>👥 Μαθητές</h5>
-                </div>
+                <div class="card-header bg-success text-white"><h5>👥 Μαθητές</h5></div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('add_student') }}" class="mb-3">
                         <div class="input-group">
@@ -112,9 +111,7 @@
 
         <div class="col-lg-4 mb-4">
             <div class="card h-100 border-info">
-                <div class="card-header bg-info text-white">
-                    <h5>📚 Μαθήματα</h5>
-                </div>
+                <div class="card-header bg-info text-white"><h5>📚 Μαθήματα</h5></div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('add_course') }}" class="mb-3">
                         <div class="input-group">
@@ -124,8 +121,8 @@
                     </form>
                     <ul class="list-group list-group-flush" id="course-list">
                         {% for course in courses %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ course.id }}" data-type="course">
-                                <span class="entity-name">{{ course.name }}</span>
+                            <li class="list-group-item d-flex justify-content-between align-items-center entity-name" data-id="{{ course.id }}" data-type="course">
+                                <span>{{ course.name }}</span>
                                 <span class="text-muted small">ID: {{ course.id }}</span>
                             </li>
                         {% endfor %}
@@ -136,9 +133,7 @@
 
         <div class="col-lg-4 mb-4">
             <div class="card h-100 border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <h5>🏷️ Τμήματα</h5>
-                </div>
+                <div class="card-header bg-warning text-dark"><h5>🏷️ Τμήματα</h5></div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('add_section') }}" class="mb-3">
                         <div class="input-group">
@@ -148,8 +143,8 @@
                     </form>
                     <ul class="list-group list-group-flush" id="section-list">
                         {% for section in sections %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ section.id }}" data-type="section">
-                                <span class="entity-name">{{ section.name }}</span>
+                            <li class="list-group-item d-flex justify-content-between align-items-center entity-name" data-id="{{ section.id }}" data-type="section">
+                                <span>{{ section.name }}</span>
                                 <span class="text-muted small">ID: {{ section.id }}</span>
                             </li>
                         {% endfor %}
@@ -157,9 +152,81 @@
                 </div>
             </div>
         </div>
-    </div>
+        
+        <div class="col-lg-12 mb-4">
+            <div class="card h-100 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5>🧑‍🏫 Καθηγητές & Αναθέσεις</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 border-end">
+                            <form method="POST" action="{{ url_for('add_teacher') }}" class="mb-4">
+                                <h6>Προσθήκη / Επεξεργασία Καθηγητή</h6>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" name="teacher_name" placeholder="Όνομα Καθηγητή" required>
+                                    <button class="btn btn-danger" type="submit">Προσθήκη</button>
+                                </div>
+                                <ul class="list-group list-group-flush small" id="teacher-list">
+                                    {% for teacher in teachers %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center entity-name" data-id="{{ teacher.id }}" data-type="teacher">
+                                            <span>{{ teacher.name }}</span>
+                                            <span class="text-muted small">ID: {{ teacher.id }}</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </form>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <form method="POST" action="{{ url_for('assign_teacher') }}" class="mb-4">
+                                <h6>Ανάθεση / Αλλαγή Καθηγητή</h6>
+                                <div class="input-group mb-2">
+                                    <select class="form-select" name="section_id" required>
+                                        <option value="" disabled selected>Επιλέξτε Τμήμα</option>
+                                        {% for section in sections %}
+                                            <option value="{{ section.id }}">{{ section.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <select class="form-select" name="course_id" required>
+                                        <option value="" disabled selected>Επιλέξτε Μάθημα</option>
+                                        {% for course in courses %}
+                                            <option value="{{ course.id }}">{{ course.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <select class="form-select" name="teacher_id" required>
+                                        <option value="" disabled selected>Επιλέξτε Καθηγητή</option>
+                                        {% for teacher in teachers %}
+                                            <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-warning" type="submit">Ανάθεση / Αλλαγή</button>
+                                </div>
+                            </form>
+                            
+                            <h6>Υπάρχουσες Αναθέσεις:</h6>
+                            <ul class="list-group list-group-flush small">
+                                {% for assign in assignments %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ assign.section.name }}</strong> / {{ assign.course.name }}
+                                        </div>
+                                        <span class="badge bg-danger">{{ assign.teacher.name }}</span>
+                                    </li>
+                                {% endfor %}
+                                {% if not assignments %}
+                                    <li class="list-group-item text-muted">Δεν υπάρχουν καταχωρημένες αναθέσεις.</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
 </div>
-
 
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -212,16 +279,14 @@
         const month = $('#filterMonth').val();
         const printBtn = $('#printReportsBtn');
 
-        // Ενεργοποίηση/Απενεργοποίηση του κουμπιού εκτύπωσης
         if (studentId && month) {
             printBtn.prop('disabled', false).removeClass('btn-dark').addClass('btn-primary');
         } else {
             printBtn.prop('disabled', true).removeClass('btn-primary').addClass('btn-dark');
         }
 
-        // Φιλτράρισμα καρτών
         $('#reports-list .report-item').each(function() {
-            const itemStudent = $(this).data('student').toString();
+            const itemStudent = $(this).data('student').toString(); 
             const itemCourse = $(this).data('course').toString();
             const itemMonth = $(this).data('month');
 
@@ -239,21 +304,6 @@
 
     $('#filterStudent, #filterCourse, #filterMonth').on('change', applyFilters);
     
-    // 4. Λειτουργία Εκτύπωσης
-    $('#printReportsBtn').on('click', function() {
-        const studentId = $('#filterStudent').val();
-        const month = $('#filterMonth').val();
-
-        if (studentId && month) {
-            // Δημιουργία URL για τη νέα route εκτύπωσης
-            const url = `{{ url_for('print_reports') }}?student_id=${studentId}&month=${month}`;
-            // Ανοίγει σε νέο παράθυρο για εκτύπωση (χρειάζεται η route /print_reports στο app.py)
-            window.open(url, '_blank'); 
-        } else {
-            alert('Παρακαλώ επιλέξτε Μαθητή και Μήνα για να συνεχίσετε στην εκτύπωση.');
-        }
-    });
-    
     // 2. Λειτουργία Toggle Κειμένου Αναφοράς
     $('.btn-toggle-report').on('click', function() {
         const reportId = $(this).data('report-id');
@@ -264,31 +314,48 @@
         fullText.toggleClass('d-none');
     });
 
-    // 3. Λειτουργία Inline Editing (Μαθητές, Μαθήματα, Τμήματα)
+    // 3. Λειτουργία Inline Editing (Άνοιγμα Modal)
     $('.entity-name').on('click', function() {
         const listItem = $(this).closest('li');
         const entityType = listItem.data('type');
         const entityId = listItem.data('id');
         const currentName = $(this).text();
-        const currentSectionId = listItem.data('section-id');
+        const currentSectionId = listItem.data('section-id'); 
 
         $('#modal-entity-type').val(entityType);
         $('#modal-entity-id').val(entityId);
-        $('#modal-new-name').val(currentName);
-        $('#editModalLabel').text('Επεξεργασία ' + (entityType === 'student' ? 'Μαθητή' : entityType === 'course' ? 'Μαθήματος' : 'Τμήματος'));
+        $('#modal-new-name').val(currentName.trim()); // Trim για Καθηγητές/Μαθήματα/Τμήματα
+        $('#editModalLabel').text('Επεξεργασία ' + 
+            (entityType === 'student' ? 'Μαθητή' : 
+             entityType === 'course' ? 'Μαθήματος' : 
+             entityType === 'teacher' ? 'Καθηγητή' : 
+             'Τμήματος'));
         
-        // Εμφάνιση/Απόκρυψη πεδίου τμήματος για τον μαθητή
+        // Εμφάνιση/Απόκρυψη πεδίου τμήματος
         if (entityType === 'student') {
             $('#student-section-select').show();
-            $('#modal-new-section').val(currentSectionId);
-            $('#name-type-info').text('Σημείωση: Αλλάζοντας το όνομα, πρέπει να είναι μοναδικό.');
+            $('#modal-new-section').val(currentSectionId); 
+            $('#name-type-info').text('Σημείωση: Μπορείτε να αλλάξετε το όνομα ή το τμήμα του μαθητή.');
         } else {
             $('#student-section-select').hide();
-            $('#name-type-info').text('Σημείωση: Το όνομα πρέπει να είναι μοναδικό.');
+            $('#name-type-info').text(entityType === 'teacher' ? 'Σημείωση: Το όνομα πρέπει να είναι μοναδικό.' : 'Σημείωση: Το όνομα πρέπει να είναι μοναδικό.');
         }
 
         var editModal = new bootstrap.Modal(document.getElementById('editModal'));
         editModal.show();
+    });
+    
+    // 4. Λειτουργία Εκτύπωσης
+    $('#printReportsBtn').on('click', function() {
+        const studentId = $('#filterStudent').val();
+        const month = $('#filterMonth').val();
+
+        if (studentId && month) {
+            const url = `{{ url_for('print_reports') }}?student_id=${studentId}&month=${month}`;
+            window.open(url, '_blank'); 
+        } else {
+            alert('Παρακαλώ επιλέξτε Μαθητή και Μήνα για να συνεχίσετε στην εκτύπωση.');
+        }
     });
 </script>
 {% endblock %}

@@ -1,54 +1,43 @@
 {% extends 'layout.html' %}
 
-{% block title %}Προσθήκη Νέας Αναφοράς{% endblock %}
+{% block title %}Επεξεργασία Αναφοράς{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">➕ Νέα Αναφορά Προόδου Μαθητή</h1>
+<h1 class="mb-4">✏️ Επεξεργασία Αναφοράς</h1>
+<p class="lead text-muted">
+    **Μαθητής:** {{ report.student.section.name }} - {{ report.student.name }} | 
+    **Μάθημα:** {{ report.course.name }} | 
+    **Μήνας:** {{ report.report_month }}
+</p>
 <hr>
 
-<form method="POST" action="{{ url_for('add_report') }}">
+<form method="POST" action="{{ url_for('edit_report', report_id=report.id) }}">
     
     <div class="row mb-3">
         <div class="col-md-6 mb-3">
-            <label for="teacher_name" class="form-label">Όνομα Καθηγητή/Τμήματος <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="teacher_name" name="teacher_name" required>
-        </div>
-        <div class="col-md-6 mb-3">
-            <label for="report_month" class="form-label">Μήνας Αναφοράς (Έτος-Μήνας) <span class="text-danger">*</span></label>
-            <input type="month" class="form-control" id="report_month" name="report_month" value="{{ now.strftime('%Y-%m') }}" required>
-            <small class="form-text text-muted">Χρησιμοποιείται για έλεγχο διπλοτυπίας (ίδιος μαθητής/μάθημα/μήνας).</small>
-        </div>
-    </div>
-    
-    <div class="row mb-3">
-        <div class="col-md-6 mb-3">
-            <label for="student_id" class="form-label">Επιλογή Μαθητή <span class="text-danger">*</span></label>
-            <select class="form-select" id="student_id" name="student_id" required>
-                <option value="" disabled selected>Επιλέξτε Μαθητή</option>
-                {% for student in students %}
-                    <option value="{{ student.id }}">{{ student.section.name }} - {{ student.name }}</option>
+            <label for="teacher_id" class="form-label">Επιλογή Καθηγητή <span class="text-danger">*</span></label>
+            <select class="form-select" id="teacher_id" name="teacher_id" required>
+                {% for teacher in teachers %}
+                    <option value="{{ teacher.id }}" {% if teacher.id == report.teacher_id %}selected{% endif %}>
+                        {{ teacher.name }}
+                    </option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-md-6 mb-3">
-            <label for="course_id" class="form-label">Επιλογή Μαθήματος <span class="text-danger">*</span></label>
-            <select class="form-select" id="course_id" name="course_id" required>
-                <option value="" disabled selected>Επιλέξτε Μάθημα</option>
-                {% for course in courses %}
-                    <option value="{{ course.id }}">{{ course.name }}</option>
-                {% endfor %}
-            </select>
+            <label for="report_month_display" class="form-label">Μήνας Αναφοράς</label>
+            <input type="text" class="form-control" id="report_month_display" value="{{ report.report_month }}" disabled>
         </div>
     </div>
     
     <div class="mb-4">
         <label for="report_text" class="form-label">Κείμενο Αναφοράς (Πρόοδος/Παρατηρήσεις) <span class="text-danger">*</span></label>
-        <textarea class="form-control" id="report_text" name="report_text" rows="8" required></textarea>
+        <textarea class="form-control" id="report_text" name="report_text" rows="8" required>{{ report.report_text }}</textarea>
     </div>
     
     <div class="d-flex justify-content-between">
         <a href="{{ url_for('view_reports') }}" class="btn btn-secondary">Ακύρωση / Πίσω</a>
-        <button type="submit" class="btn btn-primary">Καταχώρηση Αναφοράς</button>
+        <button type="submit" class="btn btn-info">Αποθήκευση Αλλαγών</button>
     </div>
 </form>
 
